@@ -60,6 +60,13 @@ func handleGetPeer(c *gin.Context) {
 
 func handleGetEvents(c *gin.Context) {
 	if lp := longPollFromContext(c); lp != nil {
+		lp.SubscriptionHandler(c.Writer, c.Request)
+	} else {
+		renderError(c, http.StatusInternalServerError, errors.New("Unable to find events manager in context"))
+	}
+}
+func handleGetEventsKey(c *gin.Context) {
+	if lp := longPollFromContext(c); lp != nil {
 		k := c.Param("k")
 
 		char := "?"
