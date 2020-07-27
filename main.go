@@ -17,6 +17,7 @@ func makeGinServer() *gin.Engine {
 	r := gin.Default()
 	r.Use(longPollMiddleware())
 	r.GET("/profile/:node_id", handleGetProfile)
+	r.GET("/peer/:node_id", handleGetPeer)
 	r.GET("/events/:k", handleGetEvents)
 	r.POST("/events/:k", handlePostEvents)
 	return r
