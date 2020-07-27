@@ -75,7 +75,7 @@ func onboard(t *testing.T, wg *sync.WaitGroup, myID string) {
 			data := Event{
 				Type: "public_endpoint",
 				Data: gin.H{
-					"id":              myID,
+					"id":              profile.PublicKey,
 					"public_endpoint": fmt.Sprintf("%s:%d", ip, port),
 				},
 			}
