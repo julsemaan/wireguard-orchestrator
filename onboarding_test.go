@@ -48,6 +48,7 @@ func onboard(t *testing.T, wg *sync.WaitGroup, myID string) {
 		ValueEqual("private_key", profile.PrivateKey).
 		ValueEqual("public_key", profile.PublicKey).
 		ValueEqual("wireguard_ip", profile.WireguardIP).
+		ValueEqual("wireguard_netmask", profile.WireguardNetmask).
 		ValueEqual("allowed_peers", profile.AllowedPeers)
 
 	wg2 := &sync.WaitGroup{}
