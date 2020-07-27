@@ -33,6 +33,8 @@ func TestOnboarding(t *testing.T) {
 	go onboard(t, wg, "peer2")
 	wg.Add(1)
 	go onboard(t, wg, "peer3")
+	wg.Add(1)
+	go onboard(t, wg, "peer4")
 	wg.Wait()
 }
 

@@ -28,21 +28,28 @@ var peers = map[string]Peer{
 		WireguardNetmask: 24,
 		PrivateKey:       "kJ4y53ahQJdhlEsJ7RGqXcnF1lQngrsCIeIR/n4gQUk=",
 		PublicKey:        "N+ZrArw5fXck3iolfeVm85VhsfZD0TLkGH8Yqg/YImQ=",
-		AllowedPeers:     []string{"peer2", "peer3"},
+		AllowedPeers:     []string{"peer2", "peer3", "peer4"},
 	},
 	"peer2": Peer{
 		WireguardIP:      net.ParseIP("192.168.69.12"),
 		WireguardNetmask: 24,
 		PrivateKey:       "ADbl0gotxpZVxa1XK9fmaN1maAI4BC3n2otJ5KENj1g=",
 		PublicKey:        "yhgu58zhYbv+wzfTVbjMb+AZ3eZwEbBG2tHB7mtMfHc=",
-		AllowedPeers:     []string{"peer1"},
+		AllowedPeers:     []string{"peer1", "peer4"},
 	},
 	"peer3": Peer{
 		WireguardIP:      net.ParseIP("192.168.69.13"),
 		WireguardNetmask: 24,
 		PrivateKey:       "0CptpDd2Mvd359CvIN3jVmE9LOB+nBVxob+i0zTbOGY=",
 		PublicKey:        "4s6iiDZA5lfqXEIJe1CrcgWJfl4OzhiobGdg+RI7axc=",
-		AllowedPeers:     []string{"peer1"},
+		AllowedPeers:     []string{"peer1", "peer4"},
+	},
+	"peer4": Peer{
+		WireguardIP:      net.ParseIP("192.168.69.14"),
+		WireguardNetmask: 24,
+		PrivateKey:       "kLmivUHD2puBcRS9Ig55q7CuurYgh4z/edcERUdkzXI=",
+		PublicKey:        "mQEUvGIe5tM9/WqtE9UZZMl+DSC8NgGrPAZCciObpCY=",
+		AllowedPeers:     []string{"peer1", "peer2", "peer3"},
 	},
 }
 
