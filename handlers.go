@@ -73,7 +73,7 @@ func handleGetEvents(c *gin.Context) {
 		}
 
 		var err error
-		c.Request.URL, err = url.Parse(c.Request.URL.String() + char + "category=" + k + "&since_time=0" + timeout)
+		c.Request.URL, err = url.Parse(c.Request.URL.String() + char + "category=" + k + timeout)
 		sharedutils.CheckError(err)
 
 		lp.SubscriptionHandler(c.Writer, c.Request)

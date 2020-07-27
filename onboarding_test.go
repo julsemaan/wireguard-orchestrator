@@ -15,6 +15,11 @@ import (
 
 var testServer *httptest.Server
 
+var peerEvents = struct {
+	sync.Mutex
+	data map[string]Event
+}{data: map[string]Event{}}
+
 func init() {
 	router := makeGinServer()
 	testServer = httptest.NewServer(router)
@@ -45,55 +50,81 @@ func onboard(t *testing.T, wg *sync.WaitGroup, myID string) {
 		ValueEqual("wireguard_ip", profile.WireguardIP).
 		ValueEqual("allowed_peers", profile.AllowedPeers)
 
+	wg2 := &sync.WaitGroup{}
 	for _, peerID := range profile.AllowedPeers {
-		peerProfile := peers[peerID]
+		wg2.Add(1)
+		go func(peerID string) {
+			peerProfile := peers[peerID]
 
-		peerTest := e.GET("/peer/" + peerID).
-			Expect().
-			Status(http.StatusOK).
-			JSON().Object()
+			peerTest := e.GET("/peer/" + peerID).
+				Expect().
+				Status(http.StatusOK).
+				JSON().Object()
 
-		peerTest.Keys().ContainsOnly("wireguard_ip", "public_key")
+			peerTest.Keys().ContainsOnly("wireguard_ip", "public_key")
 
-		peerTest.
-			ValueEqual("wireguard_ip", peerProfile.WireguardIP).
-			ValueEqual("public_key", peerProfile.PublicKey)
+			peerTest.
+				ValueEqual("wireguard_ip", peerProfile.WireguardIP).
+				ValueEqual("public_key", peerProfile.PublicKey)
 
-		p2pk := buildP2PKey(profile.PublicKey, peerProfile.PublicKey)
+			p2pk := buildP2PKey(profile.PublicKey, peerProfile.PublicKey)
 
-		ip := net.IPv4(byte(rand.Intn(255)), byte(rand.Intn(255)), byte(rand.Intn(255)), byte(rand.Intn(255)))
-		port := rand.Intn(65536)
+			ip := net.IPv4(byte(rand.Intn(255)), byte(rand.Intn(255)), byte(rand.Intn(255)), byte(rand.Intn(255)))
+			port := rand.Intn(65536)
 
-		data := Event{
-			Type: "public_endpoint",
-			Data: gin.H{
-				"id":              myID,
-				"public_endpoint": fmt.Sprintf("%s:%d", ip, port),
-			},
-		}
-		e.POST("/events/" + p2pk).WithJSON(data).Expect().
-			Status(http.StatusOK)
-
-		events := e.GET("/events/" + p2pk).
-			Expect().
-			Status(http.StatusOK).
-			JSON().Object().
-			Value("events").
-			Array().Raw()
-
-		foundData := false
-		for _, o := range events {
-			e := o.(map[string]interface{})
-			serverData := e["data"].(map[string]interface{})["data"].(map[string]interface{})
-			if serverData["id"] == data.Data["id"] && serverData["public_endpoint"] == data.Data["public_endpoint"] {
-				foundData = true
+			data := Event{
+				Type: "public_endpoint",
+				Data: gin.H{
+					"id":              myID,
+					"public_endpoint": fmt.Sprintf("%s:%d", ip, port),
+				},
 			}
-		}
 
-		if !foundData {
-			t.Error("Was unable to find my check-in data in the events")
+			e.POST("/events/" + p2pk).WithJSON(data).Expect().
+				Status(http.StatusOK)
+
+			peerEvents.Lock()
+			peerEvents.data[p2pk+myID] = data
+			peerEvents.Unlock()
+
+			pollPeerData(t, e, profile, peerProfile, p2pk, data)
+
+			for {
+				peerEvents.Lock()
+				if peerData, ok := peerEvents.data[p2pk+peerID]; ok {
+					peerEvents.Unlock()
+					pollPeerData(t, e, profile, peerProfile, p2pk, peerData)
+					break
+				} else {
+					peerEvents.Unlock()
+				}
+			}
+			wg2.Done()
+		}(peerID)
+	}
+
+	wg2.Wait()
+	wg.Done()
+}
+
+func pollPeerData(t *testing.T, e *httpexpect.Expect, profile, peerProfile Peer, p2pk string, data Event) {
+	events := e.GET("/events/"+p2pk).WithQuery("since_time", "0").WithQuery("timeout", "1").
+		Expect().
+		Status(http.StatusOK).
+		JSON().Object().
+		Value("events").
+		Array().Raw()
+
+	foundData := false
+	for _, o := range events {
+		e := o.(map[string]interface{})
+		serverData := e["data"].(map[string]interface{})["data"].(map[string]interface{})
+		if serverData["id"] == data.Data["id"] && serverData["public_endpoint"] == data.Data["public_endpoint"] {
+			foundData = true
 		}
 	}
 
-	wg.Done()
+	if !foundData {
+		t.Error("Was unable to find check-in data in the events for ID", data.Data["id"], ", public endpoint", data.Data["public_endpoint"])
+	}
 }
