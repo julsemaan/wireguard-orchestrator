@@ -110,7 +110,7 @@ func onboard(t *testing.T, wg *sync.WaitGroup, myID string) {
 	wg.Done()
 }
 
-func pollPeerData(t *testing.T, e *httpexpect.Expect, profile, peerProfile Peer, p2pk string, data Event) {
+func pollPeerData(t *testing.T, e *httpexpect.Expect, profile, peerProfile *Peer, p2pk string, data Event) {
 	events := e.GET("/events/"+p2pk).WithQuery("since_time", "0").WithQuery("timeout", "1").
 		Expect().
 		Status(http.StatusOK).
